@@ -98,6 +98,7 @@ module.exports = class BaseSlide {
             } else {
                 return null;
             }
+            color.value = "#" + (color.value.length === 8 ? color.value.substr(2, 7) + color.value.substr(0, 2) : color.value);
             return color;
         }
     }

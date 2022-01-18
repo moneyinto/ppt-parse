@@ -7,6 +7,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+package-lock.json
+
 # Editor directories and files
 .idea
 .vscode
@@ -15,3 +17,6 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+example/output/
+example/output.json
