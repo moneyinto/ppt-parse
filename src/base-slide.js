@@ -386,14 +386,14 @@ module.exports = class BaseSlide {
         const txBodyPr = SlideFunctions.getTxBodyPr(sp)(this);
         // sp.nvSpPr.txBox 区分 文本框 和 形状
         const isShape = !sp.nvSpPr.txBox;
+        const { id, name } = sp.nvSpPr.cNvPr;
         let isTitleOrContent = false;      
-        if (sp.nvSpPr.nvPr && sp.nvSpPr.nvPr.placeholder && ["body", "ctrTitle", "title", "subTitle", "pic", "tbl", "dt", "chart"].indexOf(sp.nvSpPr.nvPr.placeholder.type) > -1) {
+        if (sp.nvSpPr.nvPr && sp.nvSpPr.nvPr.placeholder && ["body", "ctrTitle", "title", "subTitle", "pic", "tbl", "dt", "chart"].indexOf(sp.nvSpPr.nvPr.placeholder.type) > -1 || name.indexOf("占位符") > -1) {
             // 标题 副标题 内容直接解析为形状
             // 标题居下
             // 内容居上
             isTitleOrContent = true;
         }
-        const { id, name } = sp.nvSpPr.cNvPr;
         const randID = createRandomCode();
         let container = {
             id: id || randID,
@@ -431,8 +431,8 @@ module.exports = class BaseSlide {
             //         value: this.getSolidFill(fill.value)
             //     };
             // }
-        } else if (isTitleOrContent) {
-            container.fill = "#fff";
+        } else {
+            container.fill = "#ffffff00";
         }
 
         const line = SlideFunctions.getLine(sp)(this);
@@ -496,7 +496,7 @@ module.exports = class BaseSlide {
                     body: "top",
                     title: "bottom"
                 };
-                const defaultAlign = (isTitleOrContent ? (titleAndContentAlign[sp.nvSpPr.nvPr.placeholder.type] || "top") : "middle")
+                const defaultAlign = (isTitleOrContent ? (titleAndContentAlign[sp.nvSpPr.nvPr.placeholder && sp.nvSpPr.nvPr.placeholder.type ? sp.nvSpPr.nvPr.placeholder.type : "body"] || "top") : "middle")
                 container.text = { ...text, align: sp.txBody.bodyPr ? sp.txBody.bodyPr.anchor === "center" ? "middle" : sp.txBody.bodyPr.anchor : defaultAlign };
             } else {
                 container = {
