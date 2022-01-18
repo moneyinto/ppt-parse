@@ -98,7 +98,6 @@ module.exports = class BaseSlide {
             } else {
                 return null;
             }
-            color.value = "#" + (color.value.length === 8 ? color.value.substr(2, 7) + color.value.substr(0, 2) : color.value);
             return color;
         }
     }
@@ -407,7 +406,8 @@ module.exports = class BaseSlide {
         if (xfrm) {
             container.left = xfrm.off.x;
             container.top = xfrm.off.y;
-            container.width = xfrm.ext.cx;
+            // 有些文本换行了。将宽度延长一点
+            container.width = isShape ? xfrm.ext.cx : (xfrm.ext.cx + 5);
             container.height = xfrm.ext.cy;
             container.rotate = xfrm.rot || 0;
         }
@@ -419,7 +419,7 @@ module.exports = class BaseSlide {
 
         const fill = SlideFunctions.getFill(sp)(this);
         if (fill) {
-            container.fill = "#" + this.getSolidFill(fill.value);
+            container.fill = this.getSolidFill(fill.value);
             // if (fill.type == "grad") {
             //     container.fill = {
             //         type: fill.type,
@@ -439,7 +439,7 @@ module.exports = class BaseSlide {
         if (line && line.color) {
             const type = line.prstDash;
             container.outline = {
-                color: "#" + this.getSolidFill(line.color),
+                color: this.getSolidFill(line.color),
                 // round: line.round,
                 style: type ? type.toLocaleLowerCase().indexOf("dash") ? "dashed" : "solid" : "solid",
                 width: line.width || 1
@@ -713,7 +713,7 @@ module.exports = class BaseSlide {
                         fontname: text ? text.defaultFontName : "Microsoft Yahei",
                         fontsize: text ? text.defaultFontSize : "18px"
                     }
-                    if (text) style.backcolor = "#" + this.getSolidFill(tc.tcPr.solidFill)
+                    if (text) style.backcolor = this.getSolidFill(tc.tcPr.solidFill)
                     const content = {
                         text: text ? text.content : "",
                         style,

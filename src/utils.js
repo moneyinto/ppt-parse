@@ -55,9 +55,9 @@ const applyLumColor = ({ value, lumMod, lumOff, tint, alpha }) => {
     lumOff = (lumOff || 0) / 100;
 
     let hsl = d3.hsl("#" + value);
-
     if (lumOff != 0) {
-        hsl.l = hsl.l * (1 + lumOff);
+        hsl.l = (hsl.l / 100) * lumMod + lumOff
+        // hsl.l = hsl.l * (1 + lumOff);
     }
 
     if (tint) {
@@ -67,12 +67,11 @@ const applyLumColor = ({ value, lumMod, lumOff, tint, alpha }) => {
         rgb.b = (rgb.b * tint) / 100 + 255 * (1 - tint / 100);
         hsl = d3.hsl(rgb);
     }
-    let hex = hsl.hex().replace("#", "");
+    let hex = hsl.hex();
     if (alpha) {
-        hex = Math.floor((255 * alpha) / 100).toString("16") + hex;
+        hex = hex + Math.floor((255 * alpha) / 100).toString("16");
     }
     return hex;
-    // return hsl.rgb()
 };
 
 /**
