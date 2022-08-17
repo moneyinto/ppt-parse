@@ -1,6 +1,6 @@
 {
     "name": "ppt-parse",
-    "version": "0.1.0",
+    "version": "0.1.5",
     "main": "src/index.js",
     "license": "MIT",
     "description": "parse pptx to single json object",
@@ -15,6 +15,7 @@
         "parse"
     ],
     "files": [
+        "index.d.ts",
         "src/*",
         "pugixml/*",
         "rapidxml.cc",

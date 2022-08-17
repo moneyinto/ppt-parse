@@ -53,10 +53,9 @@ const applyLumColor = ({ value, lumMod, lumOff, tint, alpha }) => {
 
     lumMod = (lumMod || 0) / 100;
     lumOff = (lumOff || 0) / 100;
-
     let hsl = d3.hsl("#" + value);
     if (lumOff != 0) {
-        hsl.l = (hsl.l / 100) * lumMod + lumOff
+        hsl.l = (hsl.l * (lumMod / 100) + (lumOff / 100)) * 100
         // hsl.l = hsl.l * (1 + lumOff);
     }
 

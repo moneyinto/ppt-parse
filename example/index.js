@@ -11,7 +11,7 @@ const exmaplePath = path.join(__dirname, "./");
 //     console.log(json);
 // })
 const init = async () => {
-    const result = await sdk.parse(path.join(exmaplePath, "test3.pptx"), path.join(__dirname, "./output"));
+    const result = await sdk.parse(path.join(exmaplePath, "test7.pptx"), path.join(__dirname, "./output"));
 
     const filename = path.join(__dirname, "output.json");
     fs.writeFile(filename, JSON.stringify(result), () => {});

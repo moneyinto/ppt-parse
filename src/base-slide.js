@@ -222,7 +222,7 @@ module.exports = class BaseSlide {
     /**
      * @param {Sp} sp
      */
-    parseTxBody(sp, isShape, isTitleOrContent) {
+    parseTxBody(sp, isShape, isPlaceholder) {
         if (!sp.txBody) {
             return;
         }
@@ -351,28 +351,33 @@ module.exports = class BaseSlide {
             })
             .filter((i) => !!i);
         let content = "";
-        text.map(lineText => {
+        text.map((lineText, i) => {
+            let innerContent = "";
             lineText.children.map(s => {
-                let innerContent = "";
+                let spanContent = "";
                 if (s.type === "span") {
-                    innerContent = "<span style=\"" + (s.color ? "color:#" + s.color + ";" : isShape && !isTitleOrContent ? "color:#ffffff;" : "color:#000000;") + (s.size ? "font-size:" + Math.round(s.size) + "px" + ";" : "") + (s.fontFamily ? "font-family:" + s.fontFamily[0] + ";" : "") + "\">" + s.value + "</span>";
+                    spanContent = "<span style=\"" + (s.color ? "color:" + s.color + ";" : isShape && !isPlaceholder ? "color:#ffffff;" : "color:#000000;") + (s.size ? "font-size:" + s.size + "px" + ";" : "") + (s.fontFamily ? "font-family:" + s.fontFamily[0] + ";" : "") + "\">" + s.value + "</span>";
                     if (s.bold) {
-                        innerContent = "<strong>" + innerContent + "</strong>";
+                        spanContent = "<strong>" + spanContent + "</strong>";
                     }
                     if (s.italic) {
-                        innerContent = "<em>" + innerContent + "</em>";
+                        spanContent = "<em>" + spanContent + "</em>";
                     }
+                    innerContent += spanContent;
                 }
-                content = content + innerContent;
             });
-            const align = {"ctr": "center", "l": "left", "r": "right"}[lineText.algn] || "";
-            content = "<p style=\"" + (align ? "text-align:" + align : "") + "\">" + content + "</p>";
+            const align = { "ctr": "center", "l": "left", "r": "right" }[lineText.algn] || "";
+            content += "<p style=\"" + (align ? "text-align:" + align : "") + "\">" + innerContent + "</p>";
+            if (isPlaceholder && i < text.length - 1) {
+                content += "<p></p>"
+            }
         });
         const result = {
             content,
             defaultFontName: "微软雅黑",
             defaultColor: "#000",
-            defaultFontSize: "18px"
+            defaultFontSize: "24px",
+            lineHeight: 1.2
         };
         return result;
     }
@@ -384,14 +389,18 @@ module.exports = class BaseSlide {
     parseSp(sp) {
         const txBodyPr = SlideFunctions.getTxBodyPr(sp)(this);
         // sp.nvSpPr.txBox 区分 文本框 和 形状
-        const isShape = !sp.nvSpPr.txBox;
+        // console.log(JSON.stringify(sp))
+        let isShape = !sp.nvSpPr.txBox;
         const { id, name } = sp.nvSpPr.cNvPr;
-        let isTitleOrContent = false;      
-        if (sp.nvSpPr.nvPr && sp.nvSpPr.nvPr.placeholder && ["body", "ctrTitle", "title", "subTitle", "pic", "tbl", "dt", "chart"].indexOf(sp.nvSpPr.nvPr.placeholder.type) > -1 || name.indexOf("占位符") > -1) {
+        let isPlaceholder = false;
+        // console.log(JSON.stringify(sp.nvSpPr.nvPr))
+        if (sp.nvSpPr.nvPr && (sp.nvSpPr.nvPr.placeholder || (sp.nvSpPr.cNvPr && sp.nvSpPr.cNvPr.name && sp.nvSpPr.cNvPr.name.indexOf("标题") > -1))) {
+            // 占位符
             // 标题 副标题 内容直接解析为形状
             // 标题居下
             // 内容居上
-            isTitleOrContent = true;
+            isPlaceholder = true;
+            // isShape = false;
         }
         const randID = createRandomCode();
         let container = {
@@ -486,7 +495,7 @@ module.exports = class BaseSlide {
             }
         }
 
-        const text = this.parseTxBody(sp, isShape, isTitleOrContent);
+        const text = this.parseTxBody(sp, isShape, isPlaceholder);
 
         if (text) {
             if (isShape) {
@@ -496,7 +505,7 @@ module.exports = class BaseSlide {
                     body: "top",
                     title: "bottom"
                 };
-                const defaultAlign = (isTitleOrContent ? (titleAndContentAlign[sp.nvSpPr.nvPr.placeholder && sp.nvSpPr.nvPr.placeholder.type ? sp.nvSpPr.nvPr.placeholder.type : "body"] || "top") : "middle")
+                const defaultAlign = (isPlaceholder ? (titleAndContentAlign[sp.nvSpPr.nvPr.placeholder && sp.nvSpPr.nvPr.placeholder.type ? sp.nvSpPr.nvPr.placeholder.type : "body"] || "top") : "middle")
                 container.text = { ...text, align: sp.txBody.bodyPr ? sp.txBody.bodyPr.anchor === "center" ? "middle" : sp.txBody.bodyPr.anchor : defaultAlign };
             } else {
                 container = {
@@ -704,10 +713,11 @@ module.exports = class BaseSlide {
             item.name = name || ("表格-" + id);
             item.rowHeights = [];
             item.outline = {};
+            // console.log(JSON.stringify(frame))
             item.data = table.trs.map((tr) => {
                 item.rowHeights.push(tr.height / item.height);
                 return tr.tcs.map((tc) => {
-                    const text = this.parseTxBody(tc);
+                    const text = this.parseTxBody(tc, true);
                     const style = {
                         color: text ? text.defaultColor : "#000",
                         fontname: text ? text.defaultFontName : "Microsoft Yahei",
@@ -717,19 +727,33 @@ module.exports = class BaseSlide {
                     const content = {
                         text: text ? text.content : "",
                         style,
-                        ln: tc.tcPr && tc.tcPr.ln,
+                        // ln: tc.tcPr && tc.tcPr.ln,
                         id: createRandomCode(),
                         colspan: Number(tc.gridSpan || "1"),
                         rowspan: Number(tc.rowSpan || "1")
                     };
-                    if (content.ln && content.ln.color) {
-                        content.ln.color = this.getSolidFill(
-                            content.ln.color
-                        );
+                    // if (content.ln && content.ln.color) {
+                    //     content.ln.color = this.getSolidFill(
+                    //         content.ln.color
+                    //     );
+                    // }
+                    if (tc.tcPr && tc.tcPr.ln) {
+                        item.outline = {
+                            width: tc.tcPr.ln.width,
+                            style: tc.tcPr.ln.prstDash,
+                            color: this.getSolidFill(tc.tcPr.ln.color)
+                        }
                     }
                     return content;
                 })
             });
+            item.theme = {
+                colFooter: false,
+                colHeader: false,
+                color: "#5b9bd5",
+                rowFooter: false,
+                rowHeader: true
+            }
             // item.table = {
             //     cols: table.gridCols,
             //     trs: table.trs.map((tr) => {
